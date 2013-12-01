@@ -84,6 +84,7 @@ bool dbgHelpInit()
 #ifdef _WIN64
 	// Import the Wine Wow64 dbghelp.dll
 	dbgHelpLoad(L"dbghelpw_wow64.dll", &dbgHelpWineWow64, "WoW64 Wine debug information");
+
 #endif
 
 	return true;

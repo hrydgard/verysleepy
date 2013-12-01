@@ -198,6 +198,9 @@
     <ClInclude Include="src\profiler\debugger.h">
       <Filter>profiler</Filter>
     </ClInclude>
+    <ClInclude Include="src\profiler\symbolapi.h">
+      <Filter>profiler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="keywords.txt" />

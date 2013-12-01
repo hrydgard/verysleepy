@@ -59,9 +59,30 @@ BOOL CALLBACK EnumModules(
 	return TRUE;
 }
 
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+	SymbolInfo* syminfo = static_cast<SymbolInfo*>((void*)lParam);
+	DWORD hwnd_pid = 0;
+	GetWindowThreadProcessId(hwnd, &hwnd_pid);
+
+	if (GetProcessId(syminfo->process_handle) == hwnd_pid)
+	{
+		// Okay, now verify that this window supports symbol info, it's not just a button or etc.
+		LRESULT lresult = SendMessage(hwnd, WM_VERYSLEEPY_MSG, VERYSLEEPY_WPARAM_SUPPORTED, (LPARAM)0);
+		if (lresult == TRUE)
+		{
+			syminfo->process_hwnds.push_back(hwnd);
+
+			// If allocation fails, WriteProcessMemory() will fail on a NULL ptr.
+			if (syminfo->process_message == NULL)
+				syminfo->process_message = VirtualAllocEx(syminfo->process_handle, NULL, 4096, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		}
+	}
+	return TRUE;
+}
 
 SymbolInfo::SymbolInfo()
-:	process_handle(NULL)
+:	process_handle(NULL), process_message(NULL)
 {
 }
 
@@ -244,6 +265,17 @@ void SymbolInfo::loadSymbols(HANDLE process_handle_, bool download)
 	loadSymbolsUsing(&dbgHelpMs, sympath);
 	loadSymbolsUsing(getGccDbgHelp(), sympath);
 
+	unsigned char buffer[1024];
+
+	//blame MS for this abomination of a coding technique
+	SYMBOL_INFOW* symbol_info = (SYMBOL_INFOW*)buffer;
+	symbol_info->SizeOfStruct = sizeof(SYMBOL_INFOW);
+	symbol_info->MaxNameLen = ((sizeof(buffer) - sizeof(SYMBOL_INFOW)) / sizeof(WCHAR)) - 1;
+
+	// Check if we should ping the process for func names (useful for jit.)
+	if (dbgHelpMs.SymFromNameW(process_handle, L"verysleepy__useSendMessage", symbol_info) == TRUE)
+		EnumWindows(EnumWindowsProc, (LPARAM)this);
+
 	if (g_symLog)
 		g_symLog(L"\nFinished.\n");
 	sortModules();
@@ -284,6 +316,12 @@ SymbolInfo::~SymbolInfo()
 		if (dbgHelpMs.Loaded && !dbgHelpMs.SymCleanup(process_handle))
 		{
 			//error
+		}
+
+		if (process_message != NULL)
+		{
+			VirtualFreeEx(process_handle, process_message, 0, MEM_RELEASE);
+			process_message = NULL;
 		}
 
 		process_handle = NULL;
@@ -349,6 +387,28 @@ const std::wstring SymbolInfo::getProcForAddr(PROFILER_ADDR addr,
 
 	DWORD64 displacement = 0;
 	BOOL result = dbgHelp->SymFromAddrW(process_handle, (DWORD64)addr, &displacement, symbol_info);
+
+	// If we didn't get a name, we might be able to ask the process for info itself.
+	// This might be useful if it uses a jit, for example, to dynamically create functions.
+	if (!result && !process_hwnds.empty())
+	{
+		VerySleepy_AddrInfo info;
+		info.flags = 0;
+		info.addr = addr;
+
+		if (WriteProcessMemory(process_handle, process_message, &info, sizeof(info), NULL) != 0)
+		{
+			for each (auto hwnd in process_hwnds)
+			{
+				// Take whichever window responds with success.
+				if (SendMessage(hwnd, WM_VERYSLEEPY_MSG, VERYSLEEPY_WPARAM_GETADDRINFO, (LPARAM)process_message) == TRUE)
+				{
+					if (ReadProcessMemory(process_handle, process_message, &info, sizeof(info), NULL) != 0)
+						return info.name;
+				}
+			}
+		}
+	}
 
 	if(!result)
 	{

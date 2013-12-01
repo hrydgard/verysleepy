@@ -108,6 +108,13 @@ struct DbgHelp
 		);
 
 	BOOL
+	(WINAPI *SymFromNameW)(
+		__in HANDLE hProcess,
+		__in PCWSTR Name,
+		__inout PSYMBOL_INFOW Symbol
+		);
+
+	BOOL
 	(WINAPI *SymGetLineFromAddrW64)(
 		__in HANDLE hProcess,
 		__in DWORD64 qwAddr,

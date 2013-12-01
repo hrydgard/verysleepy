@@ -279,6 +279,7 @@
   <ItemGroup>
     <ClInclude Include="src\appinfo.h" />
     <ClInclude Include="src\profiler\debugger.h" />
+    <ClInclude Include="src\profiler\symbolapi.h" />
     <ClInclude Include="src\utils\container.h" />
     <ClInclude Include="src\wxProfilerGUI\aboutdlg.h" />
     <ClInclude Include="src\wxProfilerGUI\latesymbolinfo.h" />
