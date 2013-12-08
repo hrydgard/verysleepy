@@ -68,7 +68,8 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 	if (GetProcessId(syminfo->process_handle) == hwnd_pid)
 	{
 		// Okay, now verify that this window supports symbol info, it's not just a button or etc.
-		LRESULT lresult = SendMessage(hwnd, WM_VERYSLEEPY_MSG, VERYSLEEPY_WPARAM_SUPPORTED, (LPARAM)0);
+		DWORD_PTR lresult = FALSE;
+		SendMessageTimeout(hwnd, WM_VERYSLEEPY_MSG, VERYSLEEPY_WPARAM_SUPPORTED, (LPARAM)0, SMTO_NORMAL, 500, &lresult);
 		if (lresult == TRUE)
 		{
 			syminfo->process_hwnds.push_back(hwnd);
@@ -401,7 +402,9 @@ const std::wstring SymbolInfo::getProcForAddr(PROFILER_ADDR addr,
 			for each (auto hwnd in process_hwnds)
 			{
 				// Take whichever window responds with success.
-				if (SendMessage(hwnd, WM_VERYSLEEPY_MSG, VERYSLEEPY_WPARAM_GETADDRINFO, (LPARAM)process_message) == TRUE)
+				DWORD_PTR lresult = FALSE;
+				SendMessageTimeout(hwnd, WM_VERYSLEEPY_MSG, VERYSLEEPY_WPARAM_GETADDRINFO, (LPARAM)process_message, SMTO_NORMAL, 250, &lresult);
+				if (lresult == TRUE)
 				{
 					if (ReadProcessMemory(process_handle, process_message, &info, sizeof(info), NULL) != 0)
 						return info.name;
