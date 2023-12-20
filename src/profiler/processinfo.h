@@ -59,6 +59,7 @@ public:
 	bool getIs64Bits() const { return is64Bits; }
 #endif
   FILETIME prevKernelTime, prevUserTime;
+  FILETIME creationTime{};
   int cpuUsage;
   __int64 totalCpuTimeMs;
 

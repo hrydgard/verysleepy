@@ -54,14 +54,17 @@ static bool dbgHelpTryLoad(LPCWSTR name, DbgHelp* dest)
 	IMPORT(SymLoadModuleExW);
 	IMPORT(SymSetDbgPrint); // Custom Wine extension
 	IMPORT(MiniDumpWriteDump);
+	IMPORT(SymFromNameW);
 	dest->Loaded = true;
 	return true;
 }
 
 static void dbgHelpLoad(LPCWSTR name, DbgHelp* dest, const wxString& description)
 {
-	if (!dbgHelpTryLoad(name, dest))
-		wxLogWarning("Could not load " + wxString(name) + ": " + wxSysErrorMsg() + "\n" + description + " will be unavailable.");
+	dbgHelpTryLoad(name, dest);
+
+	//if (!dbgHelpTryLoad(name, dest))
+	//	wxLogWarning("Could not load " + wxString(name) + ": " + wxSysErrorMsg() + "\n" + description + " will be unavailable.");
 }
 
 bool dbgHelpInit()

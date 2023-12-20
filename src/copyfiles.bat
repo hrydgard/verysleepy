@@ -18,14 +18,12 @@ if errorlevel 1 ((@echo Failed to copy dbghelp_*) & (exit /b 1))
 
 if not exist "%DBGHELPERS%\dbghelpw.dll" copy /y "thirdparty\wine\dlls\dbghelp\vs\bin\%PLATFORM%\%CONFIGURATION%\dbghelpw.dll" "%DEST%"
 if errorlevel 1 ((@echo Failed to copy dbghelpw.dll) & (exit /b 1))
-if %PLATFORM%==x64 if not exist "%DBGHELPERS%\dbghelpw_wow64.dll" copy /y "thirdparty\wine\dlls\dbghelp\vs\bin\%PLATFORM%\%CONFIGURATION% - Wow64\dbghelpw.dll" "%DEST%\dbghelpw_wow64.dll"
-if errorlevel 1 ((@echo Failed to copy dbghelpw_wow64.dll) & (exit /b 1))
 
 if %PLATFORM%==Win32 set PLATFORM_BITS=32
 if %PLATFORM%==x64   set PLATFORM_BITS=64
 
-if not exist "%DBGHELPERS%\dbghelpdr.dll" copy "thirdparty\drmingw_build_%PLATFORM_BITS%\bin\mgwhelp.dll" "%DEST%\dbghelpdr.dll"
-if errorlevel 1 ((@echo Failed to copy mgwhelp.dll : dbghelpdr.dll) & (exit /b 1))
+REM if not exist "%DBGHELPERS%\dbghelpdr.dll" copy "thirdparty\drmingw_build_%PLATFORM_BITS%\bin\mgwhelp.dll" "%DEST%\dbghelpdr.dll"
+REM if errorlevel 1 ((@echo Failed to copy mgwhelp.dll : dbghelpdr.dll) & (exit /b 1))
 
 if not defined VCINSTALLDIR if defined VS120COMNTOOLS set VCINSTALLDIR=%VS120COMNTOOLS%\..\..\VC
 for %%D in (msvcr120.dll msvcp120.dll) do copy "%VCINSTALLDIR%\redist\%PLATFORM_X%\Microsoft.VC120.CRT\%%D" "%DEST%\%%D"

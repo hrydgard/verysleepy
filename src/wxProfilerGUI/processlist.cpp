@@ -63,6 +63,8 @@ ProcessList::ProcessList(wxWindow *parent, const wxPoint& pos,
 	InsertColumn(COL_TOTALCPU, itemCol);
 	itemCol.m_text = _T("PID");
 	InsertColumn(COL_PID, itemCol);
+	itemCol.m_text = _T("Created");
+	InsertColumn(COL_CTIME, itemCol);
 
 	SetColumnWidth(COL_NAME, FromDIP(270));
 #ifdef _WIN64
@@ -71,8 +73,9 @@ ProcessList::ProcessList(wxWindow *parent, const wxPoint& pos,
 	SetColumnWidth(COL_CPUUSAGE, FromDIP(50));
 	SetColumnWidth(COL_TOTALCPU, FromDIP(70));
 	SetColumnWidth(COL_PID, FromDIP(50));
+	SetColumnWidth(COL_CTIME, FromDIP(70));
 
-	sort_column = COL_CPUUSAGE;
+	sort_column = COL_CTIME;
 	sort_dir = SORT_DOWN;
 	SetSortImage(sort_column, sort_dir);
 
@@ -214,6 +217,18 @@ struct PIDDescPred { bool operator () (const ProcessInfo &a, const ProcessInfo &
 	return a.getID() > b.getID();
 } };
 
+struct CTimeAscPred {
+	bool operator () (const ProcessInfo &a, const ProcessInfo &b) {
+		return CompareFileTime(&a.creationTime, &b.creationTime) < 0;
+	}
+};
+
+struct CTimeDescPred {
+	bool operator () (const ProcessInfo &a, const ProcessInfo &b) {
+		return CompareFileTime(&a.creationTime, &b.creationTime) > 0;
+	}
+};
+
 #ifdef _WIN64
 struct TypeAscPred { bool operator () (const ProcessInfo &a, const ProcessInfo &b) {
 	if(a.getIs64Bits() == b.getIs64Bits()) {
@@ -264,6 +279,14 @@ void ProcessList::sortByPID()
 		std::stable_sort(processes.begin(), processes.end(), PIDDescPred());
 }
 
+void ProcessList::sortByCTime()
+{
+	if (sort_dir == SORT_UP)
+		std::stable_sort(processes.begin(), processes.end(), CTimeAscPred());
+	else
+		std::stable_sort(processes.begin(), processes.end(), CTimeDescPred());
+}
+
 #ifdef _WIN64
 void ProcessList::sortByType()
 {
@@ -301,8 +324,17 @@ void ProcessList::updateSorting()
 #ifdef _WIN64
 		case COL_TYPE: sortByType(); break;
 #endif
+		case COL_CTIME: sortByCTime(); break;
 	}
 	fillList();
+}
+
+wxString FormatFileTime(FILETIME &ft) {
+	SYSTEMTIME systime;
+	FileTimeToSystemTime(&ft, &systime);
+	wchar_t buf[512];
+	GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &systime, NULL, buf, 512);
+	return wxString(buf);
 }
 
 void ProcessList::fillList()
@@ -334,6 +366,8 @@ void ProcessList::fillList()
 			SetItem(i,COL_TYPE,"32-bit");
 		}
 #endif
+
+		this->SetItem(i, COL_CTIME, FormatFileTime(processes[i].creationTime));
 	}
 	Thaw();
 }

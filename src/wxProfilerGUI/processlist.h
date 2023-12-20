@@ -64,6 +64,7 @@ public:
 	void sortByCpuUsage();
 	void sortByTotalCpuTime();
 	void sortByPID();
+	void sortByCTime();
 #ifdef _WIN64
 	void sortByType();
 #endif
@@ -82,6 +83,7 @@ private:
 		COL_CPUUSAGE,
 		COL_TOTALCPU,
 		COL_PID,
+		COL_CTIME,
 		NUM_COLUMNS
 	};
 

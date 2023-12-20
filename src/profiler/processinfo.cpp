@@ -40,6 +40,9 @@ ProcessInfo::ProcessInfo(DWORD id_, const std::wstring& name_, HANDLE process_ha
 #ifdef _WIN64
 	is64Bits = Is64BitProcess(process_handle);
 #endif
+
+	FILETIME exitTime{}, kernelTime{}, userTime{};  // these are ignored here
+	GetProcessTimes(process_handle_, &creationTime, &exitTime, &kernelTime, &userTime);
 }
 
 ProcessInfo::~ProcessInfo()
